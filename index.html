@@ -2,27 +2,26 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Simulación Circuito RC en Serie</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    body { background: #0b0f1a; font-family: 'Inter', system-ui, sans-serif; margin: 0; color: #eef2ff; }
+    body { background: #0b0f1a; font-family: 'Inter', system-ui, sans-serif; margin: 0; color: #eef2ff; overflow-x: hidden; }
     
-    /* Layout Adaptativo: Columna en Celular / Fila en PC */
     .app-container { 
       display: flex; 
       flex-direction: column; 
       min-height: 100vh; 
       width: 100vw; 
       padding: 8px; 
-      gap: 12px; 
+      gap: 10px; 
       box-sizing: border-box; 
     }
     
     @media (min-width: 1024px) {
       body { overflow: hidden; }
-      .app-container { flex-direction: row; height: 100vh; padding: 12px; }
+      .app-container { flex-direction: row; height: 100vh; padding: 12px; gap: 12px; }
       .left-panel { flex: 1.2; height: 100%; }
       .right-panel { flex: 1; height: 100%; overflow-y: auto; }
     }
@@ -30,7 +29,7 @@
     .left-panel, .right-panel { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
     .card { background: rgba(20, 28, 45, 0.9); backdrop-filter: blur(8px); border: 1px solid #2a3a5a; border-radius: 16px; padding: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5); }
     
-    .palette-item { background: #1e2b42; border-radius: 30px; padding: 6px 14px; font-size: 0.75rem; font-weight: 600; color: #b7d0ff; border: 1px solid #3a506e; cursor: grab; user-select: none; display: inline-flex; align-items: center; gap: 4px; touch-action: none; }
+    .palette-item { background: #1e2b42; border-radius: 30px; padding: 6px 12px; font-size: 0.75rem; font-weight: 600; color: #b7d0ff; border: 1px solid #3a506e; cursor: grab; user-select: none; display: inline-flex; align-items: center; gap: 4px; touch-action: none; }
     .palette-item:hover { background: #2b3f5e; border-color: #5e8aff; color: white; }
     
     .btn { background: #1e2b42; border: 1px solid #3a506e; color: #d7e4ff; padding: 6px 10px; border-radius: 20px; font-weight: 600; font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; touch-action: manipulation; }
@@ -40,8 +39,21 @@
     .btn-success { background: #047857; border-color: #10b981; color: white; }
     .btn-warning { background: #b45309; border-color: #d97706; color: white; }
     
-    .canvas-wrapper { flex: 1; position: relative; background: #101624; border-radius: 16px; border: 1px solid #2e3f60; overflow: hidden; min-height: 260px; touch-action: none; }
-    canvas#circuitCanvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+    /* Evita el scroll nativo dentro del canvas para poder mover cosas con el dedo */
+    .canvas-wrapper { 
+      position: relative; 
+      background: #101624; 
+      border-radius: 16px; 
+      border: 1px solid #2e3f60; 
+      overflow: hidden; 
+      height: 250px; 
+      touch-action: none; 
+    }
+    @media (min-width: 1024px) {
+      .canvas-wrapper { flex: 1; height: auto; min-height: 240px; }
+    }
+    
+    canvas#circuitCanvas { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
     
     .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
     @media (min-width: 640px) { .stat-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; } }
@@ -73,7 +85,6 @@
   <!-- PANEL IZQUIERDO -->
   <div class="left-panel">
 
-    <!-- ENCABEZADO CON TÍTULO Y AUTORES DIRECTOS EN EL CÓDIGO -->
     <div class="card flex flex-col justify-center py-2 px-4 border-l-4 border-l-blue-500">
       <h1 class="text-sm sm:text-base font-bold text-sky-400 tracking-wide uppercase">⚡ Simulación Circuito RC en Serie</h1>
       <p class="text-xs text-slate-400"><strong>Autores:</strong> Tu Nombre 1, Tu Nombre 2, Tu Nombre 3</p>
@@ -174,6 +185,7 @@
   const canvas = document.getElementById('circuitCanvas');
   const ctx = canvas.getContext('2d');
   let width = 0, height = 0;
+  let isInitialized = false;
 
   function resizeCanvas() {
     const wrapper = canvas.parentElement;
@@ -181,6 +193,11 @@
     height = wrapper.clientHeight;
     canvas.width = width;
     canvas.height = height;
+
+    if (!isInitialized && width > 0 && height > 0) {
+      initDefaultComponents();
+      isInitialized = true;
+    }
     draw();
   }
   window.addEventListener('resize', resizeCanvas);
@@ -264,55 +281,55 @@
       }
 
       if (c.type === 'source') {
-        ctx.beginPath(); ctx.arc(c.w/2, c.h/2, 22, 0, Math.PI*2);
+        ctx.beginPath(); ctx.arc(c.w/2, c.h/2, 18, 0, Math.PI*2);
         ctx.fillStyle = '#1e2b42'; ctx.fill();
         ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2; ctx.stroke();
-        ctx.fillStyle = '#b9d2ff'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText('+', c.w/2 + 8, c.h/2 - 8); ctx.fillText('-', c.w/2 - 8, c.h/2 + 8);
-        ctx.fillStyle = '#8b9dc0'; ctx.font = '10px sans-serif'; ctx.fillText(sim.v0 + 'V', c.w/2, c.h/2 + 32);
+        ctx.fillStyle = '#b9d2ff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('+', c.w/2 + 6, c.h/2 - 6); ctx.fillText('-', c.w/2 - 6, c.h/2 + 6);
+        ctx.fillStyle = '#8b9dc0'; ctx.font = '9px sans-serif'; ctx.fillText(sim.v0 + 'V', c.w/2, c.h/2 + 26);
       } 
       else if (c.type === 'resistor') {
         ctx.fillStyle = '#1e2b42'; ctx.fillRect(0, 0, c.w, c.h);
         ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.strokeRect(0, 0, c.w, c.h);
-        ctx.beginPath(); ctx.moveTo(10, c.h/2);
-        for (let i=0; i<5; i++) ctx.lineTo(10 + i*12 + 6, i%2===0 ? c.h/2 - 8 : c.h/2 + 8);
-        ctx.lineTo(c.w - 10, c.h/2); ctx.stroke();
-        ctx.fillStyle = '#8b9dc0'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText((sim.r/1000).toFixed(1) + 'kΩ', c.w/2, c.h + 14);
+        ctx.beginPath(); ctx.moveTo(6, c.h/2);
+        for (let i=0; i<5; i++) ctx.lineTo(6 + i*9 + 4, i%2===0 ? c.h/2 - 6 : c.h/2 + 6);
+        ctx.lineTo(c.w - 6, c.h/2); ctx.stroke();
+        ctx.fillStyle = '#8b9dc0'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText((sim.r/1000).toFixed(1) + 'kΩ', c.w/2, c.h + 12);
       } 
       else if (c.type === 'capacitor') {
         ctx.fillStyle = '#1e2b42'; ctx.fillRect(0, 0, c.w, c.h);
         ctx.strokeStyle = '#10b981'; ctx.lineWidth = 2; ctx.strokeRect(0, 0, c.w, c.h);
-        ctx.beginPath(); ctx.moveTo(c.w*0.35, 10); ctx.lineTo(c.w*0.35, c.h - 10);
-        ctx.moveTo(c.w*0.65, 10); ctx.lineTo(c.w*0.65, c.h - 10); ctx.stroke();
-        ctx.fillStyle = '#8b9dc0'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText((sim.c*1e6).toFixed(0) + 'µF', c.w/2, c.h + 14);
+        ctx.beginPath(); ctx.moveTo(c.w*0.35, 6); ctx.lineTo(c.w*0.35, c.h - 6);
+        ctx.moveTo(c.w*0.65, 6); ctx.lineTo(c.w*0.65, c.h - 6); ctx.stroke();
+        ctx.fillStyle = '#8b9dc0'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText((sim.c*1e6).toFixed(0) + 'µF', c.w/2, c.h + 12);
       } 
       else if (c.type === 'switch') {
         ctx.fillStyle = '#1e2b42'; ctx.fillRect(0, 0, c.w, c.h);
         ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 2; ctx.strokeRect(0, 0, c.w, c.h);
         let color = sim.switchState === 'charge' ? '#10b981' : (sim.switchState === 'discharge' ? '#ef4444' : '#6b7280');
-        ctx.fillStyle = color; ctx.beginPath(); ctx.arc(c.w/2, c.h/2, 6, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#8b9dc0'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(sim.switchState === 'charge' ? 'Carga' : (sim.switchState === 'discharge' ? 'Descarga' : 'Abierto'), c.w/2, c.h + 14);
+        ctx.fillStyle = color; ctx.beginPath(); ctx.arc(c.w/2, c.h/2, 5, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#8b9dc0'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(sim.switchState === 'charge' ? 'Carga' : (sim.switchState === 'discharge' ? 'Descarga' : 'Abierto'), c.w/2, c.h + 12);
       } 
       else if (c.type === 'multimeter') {
         ctx.fillStyle = '#1e2b42'; ctx.fillRect(0, 0, c.w, c.h);
         ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2; ctx.strokeRect(0, 0, c.w, c.h);
-        ctx.fillStyle = '#b9d2ff'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#b9d2ff'; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(sim.vc.toFixed(2) + 'V', c.w/2, c.h/2);
-        ctx.fillStyle = '#8b9dc0'; ctx.font = '9px sans-serif'; ctx.fillText('Voltaje', c.w/2, c.h/2 + 16);
+        ctx.fillStyle = '#8b9dc0'; ctx.font = '8px sans-serif'; ctx.fillText('Voltaje', c.w/2, c.h/2 + 14);
       }
       ctx.restore();
     });
 
     if (components.length === 0) {
-      ctx.fillStyle = '#4a5f80'; ctx.font = '13px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = '#4a5f80'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
       ctx.fillText('Arrastra componentes aquí para empezar', width/2, height/2);
     }
   }
 
-  // --- ARRASTRAR COMPONENTES (MOUSE Y TOUCH) ---
+  // --- INTERACCIÓN TOUCH/MOUSE COMPLETA ---
   let draggedType = null;
   document.querySelectorAll('.palette-item').forEach(el => {
     el.addEventListener('dragstart', e => { draggedType = el.dataset.type; e.dataTransfer.effectAllowed = 'copy'; });
@@ -324,18 +341,23 @@
     e.preventDefault();
     if (!draggedType) return;
     const rect = canvas.getBoundingClientRect();
-    addComponent(draggedType, e.clientX - rect.left - 30, e.clientY - rect.top - 20);
+    addComponent(draggedType, e.clientX - rect.left - 25, e.clientY - rect.top - 18);
     draggedType = null;
   });
 
   function addComponent(type, x, y) {
-    let w = 70, h = 40;
-    if (type === 'source') { w = 50; h = 50; }
-    if (type === 'resistor') { w = 80; h = 30; }
-    if (type === 'capacitor') { w = 60; h = 50; }
-    if (type === 'switch') { w = 60; h = 40; }
-    if (type === 'multimeter') { w = 60; h = 50; }
-    components.push({ id: type + '_' + Date.now(), type, x: Math.max(0, x), y: Math.max(0, y), w, h });
+    let w = 55, h = 35;
+    if (type === 'source') { w = 45; h = 45; }
+    if (type === 'resistor') { w = 60; h = 28; }
+    if (type === 'capacitor') { w = 50; h = 40; }
+    if (type === 'switch') { w = 55; h = 35; }
+    if (type === 'multimeter') { w = 55; h = 40; }
+    
+    // Mantener dentro del canvas
+    x = Math.max(5, Math.min(x, width - w - 5));
+    y = Math.max(5, Math.min(y, height - h - 5));
+
+    components.push({ id: type + '_' + Date.now(), type, x, y, w, h });
     draw();
   }
 
@@ -351,6 +373,8 @@
     if (!sim.running) startSim();
   }
 
+  let draggingComp = null, offsetX = 0, offsetY = 0;
+
   function handlePointerDown(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
     const mx = clientX - rect.left, my = clientY - rect.top;
@@ -363,6 +387,10 @@
         return;
       }
 
+      draggingComp = clickedComp;
+      offsetX = mx - clickedComp.x;
+      offsetY = my - clickedComp.y;
+
       if (selectedId === null) selectedId = clickedComp.id;
       else if (selectedId === clickedComp.id) selectedId = null;
       else {
@@ -374,12 +402,33 @@
     draw();
   }
 
+  function handlePointerMove(clientX, clientY) {
+    if (draggingComp) {
+      const rect = canvas.getBoundingClientRect();
+      draggingComp.x = Math.max(0, Math.min(clientX - rect.left - offsetX, width - draggingComp.w));
+      draggingComp.y = Math.max(0, Math.min(clientY - rect.top - offsetY, height - draggingComp.h));
+      draw();
+    }
+  }
+
   canvas.addEventListener('mousedown', e => handlePointerDown(e.clientX, e.clientY));
+  canvas.addEventListener('mousemove', e => handlePointerMove(e.clientX, e.clientY));
+  canvas.addEventListener('mouseup', () => { draggingComp = null; });
+
   canvas.addEventListener('touchstart', e => {
     if (e.touches.length === 1) {
       handlePointerDown(e.touches[0].clientX, e.touches[0].clientY);
     }
   }, {passive: true});
+
+  canvas.addEventListener('touchmove', e => {
+    if (draggingComp && e.touches.length === 1) {
+      e.preventDefault(); // Detiene el scroll de la pantalla al mover componentes
+      handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, {passive: false});
+
+  canvas.addEventListener('touchend', () => { draggingComp = null; });
 
   canvas.addEventListener('dblclick', e => {
     const rect = canvas.getBoundingClientRect();
@@ -393,36 +442,6 @@
       }
     }
   });
-
-  let draggingComp = null, offsetX = 0, offsetY = 0;
-  
-  function startDrag(clientX, clientY) {
-    const rect = canvas.getBoundingClientRect();
-    const mx = clientX - rect.left, my = clientY - rect.top;
-    let c = components.find(c => mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h);
-    if (c) { draggingComp = c; offsetX = mx - c.x; offsetY = my - c.y; }
-  }
-
-  function moveDrag(clientX, clientY) {
-    if (draggingComp) {
-      const rect = canvas.getBoundingClientRect();
-      draggingComp.x = Math.max(0, Math.min(clientX - rect.left - offsetX, width - draggingComp.w));
-      draggingComp.y = Math.max(0, Math.min(clientY - rect.top - offsetY, height - draggingComp.h));
-      draw();
-    }
-  }
-
-  canvas.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
-  canvas.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
-  canvas.addEventListener('mouseup', () => { draggingComp = null; });
-
-  canvas.addEventListener('touchmove', e => {
-    if (draggingComp && e.touches.length === 1) {
-      moveDrag(e.touches[0].clientX, e.touches[0].clientY);
-      e.preventDefault();
-    }
-  }, {passive: false});
-  canvas.addEventListener('touchend', () => { draggingComp = null; });
 
   function setAnchor() {
     sim.anchor_t = sim.t;
@@ -486,9 +505,7 @@
   });
 
   document.querySelectorAll('.switch-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      setSwitchState(btn.dataset.state);
-    });
+    btn.addEventListener('click', () => { setSwitchState(btn.dataset.state); });
   });
 
   document.querySelectorAll('.time-btn').forEach(btn => {
@@ -622,26 +639,52 @@
     chartLog.update('none');
   }
 
-  resizeCanvas();
-  addComponent('source', 60, 140);
-  addComponent('resistor', 220, 90);
-  addComponent('capacitor', 380, 140);
-  addComponent('switch', 220, 220);
-  
-  for(let i=0; i < components.length - 1; i++) {
-    connections.push({ fromId: components[i].id, toId: components[i+1].id });
+  // --- COMPONENTES INICIALES POSICIONADOS POR PORCENTAJE ---
+  function initDefaultComponents() {
+    components = [];
+    connections = [];
+
+    const wS = 45, hS = 45;
+    const wR = 60, hR = 28;
+    const wC = 50, hC = 40;
+    const wSw = 55, hSw = 35;
+
+    // Posicionamiento adaptativo según dimensiones del canvas
+    const sourceX = Math.round(width * 0.12);
+    const sourceY = Math.round(height * 0.4);
+
+    const resistorX = Math.round(width * 0.42);
+    const resistorY = Math.round(height * 0.18);
+
+    const capacitorX = Math.round(width * 0.72);
+    const capacitorY = Math.round(height * 0.4);
+
+    const switchX = Math.round(width * 0.42);
+    const switchY = Math.round(height * 0.68);
+
+    components.push({ id: 'source_' + Date.now(), type: 'source', x: sourceX, y: sourceY, w: wS, h: hS });
+    components.push({ id: 'resistor_' + Date.now(), type: 'resistor', x: resistorX, y: resistorY, w: wR, h: hR });
+    components.push({ id: 'capacitor_' + Date.now(), type: 'capacitor', x: capacitorX, y: capacitorY, w: wC, h: hC });
+    components.push({ id: 'switch_' + Date.now(), type: 'switch', x: switchX, y: switchY, w: wSw, h: hSw });
+
+    for(let i = 0; i < components.length - 1; i++) {
+      connections.push({ fromId: components[i].id, toId: components[i+1].id });
+    }
+    connections.push({ fromId: components[components.length-1].id, toId: components[0].id });
+
+    sim.tau = sim.r * sim.c;
+    
+    historyVc.push({ x: 0, y: 0 });
+    historyI.push({ x: 0, y: (sim.v0 / sim.r) * 1000 });
+    historyE.push({ x: 0, y: 0 });
+
+    draw();
+    updateReadings();
+    setAnchor();
   }
-  connections.push({ fromId: components[components.length-1].id, toId: components[0].id });
 
-  sim.tau = sim.r * sim.c;
-  
-  historyVc.push({ x: 0, y: 0 });
-  historyI.push({ x: 0, y: (sim.v0 / sim.r) * 1000 });
-  historyE.push({ x: 0, y: 0 });
-
-  draw(); 
-  updateReadings(); 
-  setAnchor();
+  // Iniciar al cargar
+  resizeCanvas();
 </script>
 </body>
 </html>
